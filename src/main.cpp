@@ -68,6 +68,7 @@ void checkButtonPress() {
       unsigned long current_time = millis();
       if (counter == 0) {
         button_start = current_time;
+        counter++;
         while (digitalRead(BUTTON) == LOW) {
           button_end = millis();
           if (button_end - button_start >= 300) {
@@ -76,7 +77,6 @@ void checkButtonPress() {
             counter = 0;
           }
         }
-        counter++;
         last_push = current_time;
         timer_start = current_time;
       } else if (counter == 1) {
@@ -99,7 +99,7 @@ void checkButtonPress() {
           timer_start = current_time;
         }
       } else if (counter == 2) {
-        if (current_time - last_push >= cutoff_time) {
+        if (current_time - last_push >= cutoff_time / 2) {
           rotation = -rotation;
           // rotateMotor();
           counter = 0;
@@ -123,11 +123,10 @@ void checkButtonPress() {
           counter = 0;
           return;
         } else {
-          unsigned long timer_elapsed = current_time - timer_start;
-          if (timer_elapsed >= 6000) {
-            counter = 0;
-            return;
-          } else {
+          while (digitalRead(BUTTON) == LOW &&
+                 current_time - last_push < cutoff_time) {
+            unsigned long timer_elapsed = current_time - timer_start;
+
             if (timer_elapsed >= 50 && timer_elapsed < 1000) {
               speed = s1;
             } else if (timer_elapsed >= 1000 && timer_elapsed < 2000) {
@@ -139,6 +138,8 @@ void checkButtonPress() {
             } else if (timer_elapsed >= 4000 && timer_elapsed < 6000) {
               speed = s5;
             }
+            counter = 0; // reset the counter after setting the speed
+            return;
           }
         }
       }
