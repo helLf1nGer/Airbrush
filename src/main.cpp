@@ -1,78 +1,55 @@
-#define buttonPin 3
-#define potSW 12
-#define directionPin 5
-#define stepPin 7
-#define enablePin 13
-#define potCLK 10
-#define potDT 11
+#include <Arduino.h>
 
 #include <Arduino.h>
 
-int buttonState = 0;
-int direction = 1;
-int rotationDuration = 2;  // Default rotation duration
-int steps = 200;  // Number of steps per rotation
-int potValue = 0;
+#define PUL 7
+#define DIR 6
+#define ENA 5
+#define BUTTON 3
 
-void potentAdjustment() {
-  int newPotValue = 0;
-  for (int i = 0; i < 1023; i++) {
-    digitalWrite(potCLK, LOW);
-    digitalWrite(potCLK, HIGH);
-    newPotValue += digitalRead(potDT);
-  }
-  int threshold = 500;  // Change threshold
-  int change = newPotValue - potValue;
-  if (abs(change) > threshold) {
-    potValue = newPotValue;
-    rotationDuration = map(potValue, 0, 1023, 1, 10);  // Update the rotation duration
-    Serial.print("Rotation duration: ");
-    Serial.print(rotationDuration);
-    Serial.println(" seconds");
-    Serial.print("Potentiometer value: ");
-    Serial.println(potValue);
-  }
-  // Check if the potentiometer was clicked
-  if (digitalRead(potSW) == LOW) {
-    // Change the direction of rotation
-    direction = -direction;
-    digitalWrite(directionPin, direction > 0 ? HIGH : LOW);
-  }
-}
-
-
-void rotateMotor(int duration) {
-  digitalWrite(enablePin, LOW);  // Enable the motor
-  for (int i = 0; i < duration * steps; i++) {
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(500);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(500);
-  }
-  digitalWrite(enablePin, HIGH);  // Disable the motor
-}
-
-void pushButton() {
-  buttonState = digitalRead(buttonPin);
-  if (buttonState == LOW) {
-    //potentAdjustment();  // Adjust the potentiometer
-    rotateMotor(rotationDuration * direction);  // Rotate the motor
-  }
-}
-
+unsigned long button_start;
+unsigned long button_end;
+unsigned short pulseRev = 3200;
+unsigned short speed = 200;
 
 void setup() {
-  pinMode(buttonPin, INPUT_PULLUP);
-  pinMode(directionPin, OUTPUT);
-  pinMode(stepPin, OUTPUT);
-  pinMode(enablePin, OUTPUT);
-  pinMode(potSW, INPUT_PULLUP);
-  digitalWrite(enablePin, HIGH);  // Disable the motor by default
-  Serial.begin(115200);
+  pinMode(PUL, OUTPUT);
+  pinMode(DIR, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(BUTTON, INPUT_PULLUP);
+
+  digitalWrite(PUL, LOW);
+  digitalWrite(DIR, LOW);
+  digitalWrite(ENA, HIGH);
+}
+
+void rotateMotor() {
+  digitalWrite(ENA, LOW);
+  for (int i = 0; i < pulseRev; i++) {
+    digitalWrite(PUL, HIGH);
+    digitalWrite(PUL, LOW);
+    delayMicroseconds(speed);
+  }
+  digitalWrite(ENA, HIGH);
+  }
+
+void checkLongPress() {
+  button_start = millis();
+
+  // Wait until the pushbutton is released
+  while (digitalRead(BUTTON) == LOW) {
+    // Check if the pushbutton has been pushed for more than 300 milliseconds
+    button_end = millis();
+    if (button_end - button_start >= 300) {
+      // Invoke the rotateMotor function
+      rotateMotor();
+    }
+  }
 }
 
 void loop() {
-  pushButton();
-  potentAdjustment();
-  delay(10);
+  // Check if the pushbutton is being pushed
+  if (digitalRead(BUTTON) == LOW) {
+    checkLongPress();
+  }
 }
