@@ -119,12 +119,12 @@ void checkButtonPress() {
           timer_start = current_time;
         }
       } else if (counter == 3) {
-        if (current_time - last_push >= cutoff_time) {
+        if (current_time - last_push >= 6000) {
           counter = 0;
           return;
         } else {
           while (digitalRead(BUTTON) == LOW &&
-                 current_time - last_push < cutoff_time) {
+                 current_time - last_push < 6000) {
             unsigned long timer_elapsed = current_time - timer_start;
 
             if (timer_elapsed >= 50 && timer_elapsed < 1000) {
