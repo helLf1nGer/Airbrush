@@ -11,9 +11,9 @@ unsigned short pulseRev = 3200;
 unsigned short speed = 200;
 const unsigned short s1 = 100;
 const unsigned short s2 = 200;
-const unsigned short s3 = 300;
-const unsigned short s4 = 400;
-const unsigned short s5 = 500;
+const unsigned short s3 = 400;
+const unsigned short s4 = 800;
+const unsigned short s5 = 1600;
 unsigned int counter = 0;
 unsigned int rotation = 1;
 unsigned long last_push = 0;
@@ -43,16 +43,6 @@ void rotateMotor() {
   digitalWrite(ENA, HIGH);
 }
 
-void checkLongPress() {
-  button_start = millis();
-  while (digitalRead(BUTTON) == LOW) {
-    button_end = millis();
-    if (button_end - button_start >= 300) {
-      rotateMotor();
-    }
-  }
-}
-
 void checkButtonPress() {
   static unsigned long lastButtonStateChangeTime = 0;
   static int lastButtonState = HIGH;
@@ -73,15 +63,14 @@ void checkButtonPress() {
           button_end = millis();
           if (button_end - button_start >= 300) {
             rotateMotor();
-            // return;
             counter = 0;
+            // return;
           }
         }
         last_push = current_time;
         timer_start = current_time;
       } else if (counter == 1) {
         if (current_time - last_push >= cutoff_time) {
-          // rotateMotor();
           counter = 0;
           return;
         } else {
@@ -101,7 +90,6 @@ void checkButtonPress() {
       } else if (counter == 2) {
         if (current_time - last_push >= cutoff_time / 2) {
           rotation = -rotation;
-          // rotateMotor();
           counter = 0;
           return;
         } else {
@@ -122,25 +110,25 @@ void checkButtonPress() {
         if (current_time - last_push >= 6000) {
           counter = 0;
           return;
-        } else {
-          while (digitalRead(BUTTON) == LOW &&
-                 current_time - last_push < 6000) {
-            unsigned long timer_elapsed = current_time - timer_start;
-
-            if (timer_elapsed >= 50 && timer_elapsed < 1000) {
-              speed = s1;
-            } else if (timer_elapsed >= 1000 && timer_elapsed < 2000) {
-              speed = s2;
-            } else if (timer_elapsed >= 2000 && timer_elapsed < 3000) {
-              speed = s3;
-            } else if (timer_elapsed >= 3000 && timer_elapsed < 4000) {
-              speed = s4;
-            } else if (timer_elapsed >= 4000 && timer_elapsed < 6000) {
-              speed = s5;
-            }
-            counter = 0; // reset the counter after setting the speed
-            return;
+        } else if (digitalRead(BUTTON) == LOW) { // check if button is pressed
+          unsigned long press_start = millis();
+          while (digitalRead(BUTTON) == LOW) {
+            // loop until button is released
           }
+          unsigned long press_duration = millis() - press_start;
+          if (press_duration < 1000) {
+            speed = s1;
+          } else if (press_duration < 2000) {
+            speed = s2;
+          } else if (press_duration < 3000) {
+            speed = s3;
+          } else if (press_duration < 4000) {
+            speed = s4;
+          } else {
+            speed = s5;
+          }
+          counter = 0; // reset the counter after setting the speed
+          return;
         }
       }
     }
